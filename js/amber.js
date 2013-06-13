@@ -50,7 +50,7 @@ amber = (function() {
 			nocache = '?' + spec.version;
 		}
 
-		loadDependencies();
+		loadDependencies(deploy);
 		addJSToLoad('js/lib/es5-shim-2.0.2/es5-shim.min.js');
 		addJSToLoad('js/lib/es5-shim-2.0.2/es5-sham.min.js');
 		addJSToLoad('js/boot.js');
@@ -183,12 +183,12 @@ amber = (function() {
 		document.getElementsByTagName("head")[0].appendChild(link);
 	}
 
-	function loadDependencies() {
+	function loadDependencies(deploy) {
 		if (typeof jQuery == 'undefined') {
 			addJSToLoad('js/lib/jQuery/jquery-1.8.2.min.js');
 		}
 
-		if ((typeof jQuery == 'undefined') || (typeof jQuery.ui == 'undefined')) {
+		if (deploy !== true && ((typeof jQuery == 'undefined') || (typeof jQuery.ui == 'undefined'))) {
 			addJSToLoad('js/lib/jQuery/jquery-ui-1.8.16.custom.min.js');
 		}
 	}
