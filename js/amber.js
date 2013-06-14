@@ -18,6 +18,7 @@ amber = (function() {
 
 	var spec;
 	var jsToLoad = [];
+	var packagesToLoad = [];
 	var loadJS;
 	var nocache = '';
 
@@ -94,7 +95,7 @@ amber = (function() {
 
 		var additionalFiles = spec.packages || spec.files;
 		if (additionalFiles) {
-			that.commitPath = loadPackages(additionalFiles, spec.prefix, spec.packageHome);
+			that.commitPath = loadPackages(additionalFiles, spec.prefix, spec.packageHome, !deploy);
 		}
 
 		// Be sure to setup & initialize smalltalk classes
@@ -102,20 +103,38 @@ amber = (function() {
 		initializeSmalltalk();
 	};
 
-	function loadPackages(names, prefix, urlHome){
+	function loadPackages(names, prefix, urlHome, compile) {
 		var name;
 		prefix = prefix || 'js';
 		urlHome = urlHome || home;
 
 		for (var i=0; i < names.length; i++) {
 			name = names[i].split(/\.js$/)[0];
-			addJSToLoad(name + '.js', prefix, urlHome);
+			if (compile) {
+				ensureCompiled(name, prefix, urlHome);
+			} else {
+				addJSToLoad(name + '.js', prefix, urlHome);
+			}
 		}
 
 		return  {
 			js: urlHome + prefix,
 			st: urlHome + (prefix.match(/\/js$/) ? prefix.replace(/\/js$/, "/st") : "st")
 		};
+	}
+
+	function ensureCompiled(name, prefix, urlHome) {
+		$.ajax({
+		    url: urlHome + prefix + "/" + name + ".js",
+		    type: 'GET', // usually HEAD, but default amber FileServer doesn't support that
+		    error: function() {
+		        packagesToLoad.push(prefix.replace(/\/js$/, "/st") + "/" + name + ".st");
+		    },
+		    success: function() {
+		        console.log(name + " up to date");
+		    },
+		    async: false
+		});
 	}
 
 	function addJSToLoad(name, prefix, urlHome) {
@@ -201,6 +220,11 @@ amber = (function() {
 	// This will be called after JS files have been loaded
 	function initializeSmalltalk() {
 		that.smalltalkReady = function() {
+			var importer = smalltalk.Importer._new();
+			for (var i = 0; i < packagesToLoad.length; ++i) {
+				console.log("Reloading " + packagesToLoad[i] + " ...");
+				importer._reloadPackageFromURL_(packagesToLoad[i]);
+			}
 			if (spec.ready) {
 				spec.ready();
 			}

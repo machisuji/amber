@@ -625,6 +625,28 @@ smalltalk.StrippedExporter);
 smalltalk.addClass('Importer', smalltalk.Object, [], 'Importer-Exporter');
 smalltalk.addMethod(
 smalltalk.method({
+selector: "getURL:",
+fn: function (aString){
+var self=this;
+var result;
+return smalltalk.withContext(function($ctx1) { 
+var $1;
+_st(jQuery)._ajax_options_(aString,smalltalk.HashedCollection._from_(["type".__minus_gt("GET"),"success".__minus_gt((function(data,status,xhr){
+return smalltalk.withContext(function($ctx2) {
+result=data;
+return result;
+}, function($ctx2) {$ctx2.fillBlock({data:data,status:status,xhr:xhr},$ctx1)})})),"error".__minus_gt((function(xhr){
+return smalltalk.withContext(function($ctx2) {
+return self._error_(_st(_st(_st("Fetching ".__comma(aString)).__comma(" failed with reason: \x22")).__comma(_st(xhr)._responseText())).__comma("\x22"));
+}, function($ctx2) {$ctx2.fillBlock({xhr:xhr},$ctx1)})})),"async".__minus_gt(false)]));
+$1=result;
+return $1;
+}, function($ctx1) {$ctx1.fill(self,"getURL:",{aString:aString,result:result},smalltalk.Importer)})},
+messageSends: ["ajax:options:", "->", "error:", ",", "responseText"]}),
+smalltalk.Importer);
+
+smalltalk.addMethod(
+smalltalk.method({
 selector: "import:",
 fn: function (aStream){
 var self=this;
@@ -661,6 +683,68 @@ return self}, function($ctx1) {$ctx1.fill(self,"import:",{aStream:aStream,chunk:
 messageSends: ["on:", "whileFalse:", "ifTrue:ifFalse:", "evaluateExpression:", "new", "ifTrue:", "scanFrom:", "isEmpty", "nextChunk", "isNil"]}),
 smalltalk.Importer);
 
+smalltalk.addMethod(
+smalltalk.method({
+selector: "importFromURL:",
+fn: function (aString){
+var self=this;
+var stream,source;
+function $StringStream(){return smalltalk.StringStream||(typeof StringStream=="undefined"?nil:StringStream)}
+return smalltalk.withContext(function($ctx1) { 
+var $1,$2;
+source=self._getURL_(aString);
+$1=_st($StringStream())._on_([]);
+_st($1)._nextPutString_(source);
+_st($1)._reset();
+$2=_st($1)._yourself();
+stream=$2;
+self._import_(stream);
+return self}, function($ctx1) {$ctx1.fill(self,"importFromURL:",{aString:aString,stream:stream,source:source},smalltalk.Importer)})},
+messageSends: ["getURL:", "nextPutString:", "on:", "reset", "yourself", "import:"]}),
+smalltalk.Importer);
+
+smalltalk.addMethod(
+smalltalk.method({
+selector: "reloadPackage:fromURL:",
+fn: function (aString,anotherString){
+var self=this;
+function $Package(){return smalltalk.Package||(typeof Package=="undefined"?nil:Package)}
+function $PackageHandler(){return smalltalk.PackageHandler||(typeof PackageHandler=="undefined"?nil:PackageHandler)}
+return smalltalk.withContext(function($ctx1) { 
+self._importFromURL_(anotherString);
+_st(_st($PackageHandler())._new())._commitJavascript_(_st($Package())._named_(aString));
+return self}, function($ctx1) {$ctx1.fill(self,"reloadPackage:fromURL:",{aString:aString,anotherString:anotherString},smalltalk.Importer)})},
+messageSends: ["importFromURL:", "commitJavascript:", "named:", "new"]}),
+smalltalk.Importer);
+
+smalltalk.addMethod(
+smalltalk.method({
+selector: "reloadPackageFromURL:",
+fn: function (aString){
+var self=this;
+var tokens,name,prefix,package_;
+function $Package(){return smalltalk.Package||(typeof Package=="undefined"?nil:Package)}
+function $PackageHandler(){return smalltalk.PackageHandler||(typeof PackageHandler=="undefined"?nil:PackageHandler)}
+return smalltalk.withContext(function($ctx1) { 
+tokens=_st(aString)._tokenize_("/");
+name=_st(tokens)._last();
+_st(tokens)._remove_(name);
+name=_st(_st(name)._tokenize_("."))._at_((1));
+prefix=_st(tokens)._at_((1));
+_st(tokens)._remove_(prefix);
+prefix=_st(tokens)._inject_into_(prefix,(function(acc,seg){
+return smalltalk.withContext(function($ctx2) {
+return _st(_st(acc).__comma("/")).__comma(seg);
+}, function($ctx2) {$ctx2.fillBlock({acc:acc,seg:seg},$ctx1)})}));
+self._importFromURL_(aString);
+package_=_st($Package())._named_(name);
+_st(package_)._commitPathJs_(_st(prefix)._replaceRegexp_with_("/st","/js"));
+_st(package_)._commitPathSt_(prefix);
+_st(_st($PackageHandler())._new())._commitJavascript_(package_);
+return self}, function($ctx1) {$ctx1.fill(self,"reloadPackageFromURL:",{aString:aString,tokens:tokens,name:name,prefix:prefix,package_:package_},smalltalk.Importer)})},
+messageSends: ["tokenize:", "last", "remove:", "at:", "inject:into:", ",", "importFromURL:", "named:", "commitPathJs:", "replaceRegexp:with:", "commitPathSt:", "commitJavascript:", "new"]}),
+smalltalk.Importer);
+
 
 
 smalltalk.addClass('PackageHandler', smalltalk.Object, [], 'Importer-Exporter');
@@ -687,15 +771,47 @@ function $Exporter(){return smalltalk.Exporter||(typeof Exporter=="undefined"?ni
 function $StrippedExporter(){return smalltalk.StrippedExporter||(typeof StrippedExporter=="undefined"?nil:StrippedExporter)}
 function $ChunkExporter(){return smalltalk.ChunkExporter||(typeof ChunkExporter=="undefined"?nil:ChunkExporter)}
 return smalltalk.withContext(function($ctx1) { 
-_st([_st($Exporter()).__minus_gt(_st(_st(_st(_st(aPackage)._commitPathJs()).__comma("/")).__comma(_st(aPackage)._name())).__comma(".js")),_st($StrippedExporter()).__minus_gt(_st(_st(_st(_st(aPackage)._commitPathJs()).__comma("/")).__comma(_st(aPackage)._name())).__comma(".deploy.js")),_st($ChunkExporter()).__minus_gt(_st(_st(_st(_st(aPackage)._commitPathSt()).__comma("/")).__comma(_st(aPackage)._name())).__comma(".st"))])._do_displayingProgress_((function(commitStrategy){
+self._commit_withStrategies_(aPackage,[$Exporter(),$StrippedExporter(),$ChunkExporter()]);
+return self}, function($ctx1) {$ctx1.fill(self,"commit:",{aPackage:aPackage},smalltalk.PackageHandler)})},
+messageSends: ["commit:withStrategies:"]}),
+smalltalk.PackageHandler);
+
+smalltalk.addMethod(
+smalltalk.method({
+selector: "commit:withStrategies:",
+fn: function (aPackage,aCollection){
+var self=this;
+var strategies;
+function $Exporter(){return smalltalk.Exporter||(typeof Exporter=="undefined"?nil:Exporter)}
+function $StrippedExporter(){return smalltalk.StrippedExporter||(typeof StrippedExporter=="undefined"?nil:StrippedExporter)}
+function $ChunkExporter(){return smalltalk.ChunkExporter||(typeof ChunkExporter=="undefined"?nil:ChunkExporter)}
+return smalltalk.withContext(function($ctx1) { 
+strategies=_st([_st($Exporter()).__minus_gt(_st(_st(_st(_st(aPackage)._commitPathJs()).__comma("/")).__comma(_st(aPackage)._name())).__comma(".js")),_st($StrippedExporter()).__minus_gt(_st(_st(_st(_st(aPackage)._commitPathJs()).__comma("/")).__comma(_st(aPackage)._name())).__comma(".deploy.js")),_st($ChunkExporter()).__minus_gt(_st(_st(_st(_st(aPackage)._commitPathSt()).__comma("/")).__comma(_st(aPackage)._name())).__comma(".st"))])._select_((function(entry){
+return smalltalk.withContext(function($ctx2) {
+return _st(aCollection)._includes_(_st(entry)._key());
+}, function($ctx2) {$ctx2.fillBlock({entry:entry},$ctx1)})}));
+_st(strategies)._do_displayingProgress_((function(commitStrategy){
 var fileContents;
 return smalltalk.withContext(function($ctx2) {
 fileContents=_st(_st(_st(commitStrategy)._key())._new())._exportPackage_(_st(aPackage)._name());
 fileContents;
 return self._ajaxPutAt_data_(_st(commitStrategy)._value(),fileContents);
 }, function($ctx2) {$ctx2.fillBlock({commitStrategy:commitStrategy,fileContents:fileContents},$ctx1)})}),"Committing package ".__comma(_st(aPackage)._name()));
-return self}, function($ctx1) {$ctx1.fill(self,"commit:",{aPackage:aPackage},smalltalk.PackageHandler)})},
-messageSends: ["do:displayingProgress:", "exportPackage:", "name", "new", "key", "ajaxPutAt:data:", "value", ",", "->", "commitPathJs", "commitPathSt"]}),
+return self}, function($ctx1) {$ctx1.fill(self,"commit:withStrategies:",{aPackage:aPackage,aCollection:aCollection,strategies:strategies},smalltalk.PackageHandler)})},
+messageSends: ["select:", "includes:", "key", "->", ",", "name", "commitPathJs", "commitPathSt", "do:displayingProgress:", "exportPackage:", "new", "ajaxPutAt:data:", "value"]}),
+smalltalk.PackageHandler);
+
+smalltalk.addMethod(
+smalltalk.method({
+selector: "commitJavascript:",
+fn: function (aPackage){
+var self=this;
+function $Exporter(){return smalltalk.Exporter||(typeof Exporter=="undefined"?nil:Exporter)}
+function $StrippedExporter(){return smalltalk.StrippedExporter||(typeof StrippedExporter=="undefined"?nil:StrippedExporter)}
+return smalltalk.withContext(function($ctx1) { 
+self._commit_withStrategies_(aPackage,[$Exporter(),$StrippedExporter()]);
+return self}, function($ctx1) {$ctx1.fill(self,"commitJavascript:",{aPackage:aPackage},smalltalk.PackageHandler)})},
+messageSends: ["commit:withStrategies:"]}),
 smalltalk.PackageHandler);
 
 smalltalk.addMethod(

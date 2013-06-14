@@ -359,6 +359,19 @@ I can import Amber code from a string in the chunk format.
 
 !Importer methodsFor: 'fileIn'!
 
+getURL: aString
+	| result |
+	jQuery
+		ajax: aString
+		options: #{
+			'type' -> 'GET'.
+			'success' -> [ :data :status :xhr | result := data ].
+			'error' -> [ :xhr | self error: 'Fetching ' , aString , ' failed with reason: "' , (xhr responseText) , '"'].
+			'async' -> false
+		}.
+	^ result
+!
+
 import: aStream
 	| chunk result parser lastEmpty |
 	parser := ChunkParser on: aStream.
@@ -373,6 +386,40 @@ import: aStream
 						ifTrue: [
 									lastEmpty := false.
 									result scanFrom: parser]]]
+!
+
+importFromURL: aString
+	"Imports a .st file from the given URL."
+	| stream source |
+	source := self getURL: aString.
+	stream := (StringStream on: #())
+		nextPutString: source;
+		reset;
+		yourself.
+
+	self import: stream.
+!
+
+reloadPackageFromURL: aString
+	"Only works with relative URLs (to localhost that is)."
+	| tokens name prefix package |
+	tokens := aString tokenize: '/'.
+
+	name := tokens last.
+	tokens remove: name.
+	name := (name tokenize: '.') at: 1.
+
+	prefix := tokens at: 1.
+	tokens remove: prefix.
+
+	prefix := tokens inject: prefix into: [:acc :seg | acc, '/', seg].
+
+	self importFromURL: aString.
+	package := Package named: name.
+	package commitPathJs: (prefix replaceRegexp: '/st' with: '/js').
+	package commitPathSt: prefix.
+
+	PackageHandler new commitJavascript: package.
 ! !
 
 Object subclass: #PackageHandler
@@ -386,15 +433,25 @@ I should not be used directly. Instead, use the corresponding `Package` methods.
 !PackageHandler methodsFor: 'committing'!
 
 commit: aPackage
-	{ 
+	self commit: aPackage withStrategies: {Exporter. StrippedExporter. ChunkExporter}
+!
+
+commit: aPackage withStrategies: aCollection
+	| strategies |
+	strategies := {
 		Exporter -> (aPackage commitPathJs, '/', aPackage name, '.js').
 		StrippedExporter -> (aPackage commitPathJs, '/', aPackage name, '.deploy.js').
 		ChunkExporter -> (aPackage commitPathSt, '/', aPackage name, '.st')
-	} 
-		do: [ :commitStrategy|| fileContents |
-			fileContents := (commitStrategy key new exportPackage: aPackage name).
-			self ajaxPutAt: commitStrategy value data: fileContents ]
-		displayingProgress: 'Committing package ', aPackage name
+	} select: [ :entry | aCollection includes: entry key ].
+
+	strategies do: [ :commitStrategy|| fileContents |
+		fileContents := (commitStrategy key new exportPackage: aPackage name).
+		self ajaxPutAt: commitStrategy value data: fileContents ]
+	displayingProgress: 'Committing package ', aPackage name
+!
+
+commitJavascript: aPackage
+	self commit: aPackage withStrategies: {Exporter. StrippedExporter}
 ! !
 
 !PackageHandler methodsFor: 'loading'!
