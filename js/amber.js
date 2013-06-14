@@ -110,8 +110,8 @@ amber = (function() {
 
 		for (var i=0; i < names.length; i++) {
 			name = names[i].split(/\.js$/)[0];
-			if (compile) {
-				ensureCompiled(name, prefix, urlHome);
+			if (compile && !existsCompiled(name, prefix, urlHome)) {
+				packagesToLoad.push(prefix.replace(/\/js$/, "/st") + "/" + name + ".st");
 			} else {
 				addJSToLoad(name + '.js', prefix, urlHome);
 			}
@@ -123,18 +123,22 @@ amber = (function() {
 		};
 	}
 
-	function ensureCompiled(name, prefix, urlHome) {
+	function existsCompiled(name, prefix, urlHome) {
+		var exists = true;
 		$.ajax({
 		    url: urlHome + prefix + "/" + name + ".js",
 		    type: 'GET', // usually HEAD, but default amber FileServer doesn't support that
-		    error: function() {
-		        packagesToLoad.push(prefix.replace(/\/js$/, "/st") + "/" + name + ".st");
+		    dataType: "text", // don't try to evaluate
+		    error: function(e, a, b) {
+		        exists = false;
 		    },
 		    success: function() {
 		        console.log(name + " up to date");
 		    },
 		    async: false
 		});
+
+		return exists;
 	}
 
 	function addJSToLoad(name, prefix, urlHome) {
