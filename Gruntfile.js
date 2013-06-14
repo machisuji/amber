@@ -3,10 +3,10 @@ module.exports = function(grunt) {
   grunt.loadTasks('./grunt/tasks');
 
   grunt.loadNpmTasks('grunt-contrib-jshint');
-//  grunt.loadNpmTasks('grunt-image-embed');
-//  grunt.loadNpmTasks('grunt-contrib-mincss');
+  grunt.loadNpmTasks('grunt-contrib-concat');
+  grunt.loadNpmTasks('grunt-contrib-uglify');
 
-  grunt.registerTask('default', ['peg', 'amberc:all']);
+  grunt.registerTask('default', ['peg', 'amberc:all', 'concat', 'uglify']);
 
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
@@ -108,63 +108,36 @@ module.exports = function(grunt) {
       tests: ['test/*.js'],
       grunt: ['grunt.js', 'grunt/**/*.js']
     },
-/*
+
     concat: {
-      deploy: {
-        src: ['tmp/amber-compiled.deploy.js'],
-        dest: 'dist/amber-<%= pkg.version %>.deploy.js'
+      options: {
+        separator: ';'
       },
-
-      css: {
+      dist: {
         src: [
-          'css/amber.css',
-          'js/lib/CodeMirror/codemirror.css',
-          'js/lib/CodeMirror/amber.css'
+          'js/boot.js',
+          'js/Kernel-Objects.deploy.js',
+          'js/Kernel-Classes.deploy.js',
+          'js/Kernel-Methods.deploy.js',
+          'js/Kernel-Collections.deploy.js',
+          'js/Kernel-Exceptions.deploy.js',
+          'js/Kernel-Transcript.deploy.js',
+          'js/Kernel-Announcements.deploy.js',
+          'js/Canvas.deploy.js'
         ],
-        dest: 'tmp/amber.css'
+        dest: 'js/<%= pkg.name %>.packages.concat.js'
+      }
+    },
+
+    uglify: {
+      options: {
+        banner: '/*!\n <%= pkg.title || pkg.name %> - v<%= pkg.version %> - <%= grunt.template.today("yyyy-mm-dd") %> \n License: <%= pkg.license.type %> \n*/\n'
       },
-
-      dev: {
-        src: [
-          'js/lib/jQuery/jquery-ui-1.8.16.custom.min.js',
-          'js/lib/jQuery/jquery.textarea.js',
-          'js/lib/CodeMirror/codemirror.js',
-          'js/lib/CodeMirror/smalltalk.js',
-          'tmp/amber-compiled.js',
-          'tmp/css.js'
-        ],
-        dest: 'dist/amber-<%= pkg.version %>.js'
-      }
-    },
-
-    imageEmbed: {
-      dev: {
-        src: ['tmp/amber.css'],
-        dest: 'tmp/amber-images.css',
-        options: {baseDir: 'public'}
-      }
-    },
-
-    mincss: {
-      dev: {
-        src: ['tmp/amber-images.css'],
-        dest: 'tmp/amber.min.css'
-      }
-    },
-
-    css2js: {
-      dev: {
-        src: 'tmp/amber.min.css',
-        dest: 'tmp/css.js'
-      }
-    },
-
-    min: {
-      deploy: {
-        src: 'dist/amber-<%= pkg.version %>.deploy.js',
-        dest: 'dist/amber-<%= pkg.version %>.deploy.min.js'
+      dist: {
+        files: {
+          'js/<%= pkg.name %>.packages.min.js': ['<%= concat.dist.dest %>']
+        }
       }
     }
-*/
   });
 };

@@ -53,20 +53,14 @@ amber = (function() {
 		loadDependencies(deploy);
 		addJSToLoad('js/lib/es5-shim-2.0.2/es5-shim.min.js');
 		addJSToLoad('js/lib/es5-shim-2.0.2/es5-sham.min.js');
-		addJSToLoad('js/boot.js');
 
 		if (deploy) {
 			loadPackages([
-				'Kernel-Objects.deploy',
-				'Kernel-Classes.deploy',
-				'Kernel-Methods.deploy',
-				'Kernel-Collections.deploy',
-				'Kernel-Exceptions.deploy',
-				'Kernel-Transcript.deploy',
-				'Kernel-Announcements.deploy',
-				'Canvas.deploy'
+				'amber.packages.min.js'
 			]);
 		} else {
+			addJSToLoad('js/boot.js');
+
 			loadIDEDependencies();
 			loadCSS('amber.css');
 
