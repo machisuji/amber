@@ -224,10 +224,12 @@ amber = (function() {
 	// This will be called after JS files have been loaded
 	function initializeSmalltalk() {
 		that.smalltalkReady = function() {
-			var importer = smalltalk.Importer._new();
-			for (var i = 0; i < packagesToLoad.length; ++i) {
-				console.log("Reloading " + packagesToLoad[i] + " ...");
-				importer._reloadPackageFromURL_(packagesToLoad[i]);
+			if (packagesToLoad.length > 0) {
+				var importer = smalltalk.Importer._new();
+				for (var i = 0; i < packagesToLoad.length; ++i) {
+					console.log("Reloading " + packagesToLoad[i] + " ...");
+					importer._reloadPackageFromURL_(packagesToLoad[i]);
+				}
 			}
 			if (spec.ready) {
 				spec.ready();
