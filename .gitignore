@@ -7,9 +7,8 @@ server/FileServer*.js
 # Ignoring compiled files in st
 st/*.js
 
-# Ignoring concatenated and minified amber packages
+# Ignoring concatenated amber packages
 js/amber.packages.concat.js
-js/amber.packages.min.js
 
 # Ignoring run.js in test/
 test/amber_test_runner.js
